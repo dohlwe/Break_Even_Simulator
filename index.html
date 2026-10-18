@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Break-Even-Simulator</title>
+<style>
+/* Layout: Stellschrauben links, Diagramm rechts; auf dem Handy Diagramm oben (sticky) */
+:root{
+  --bg:#f5f3ee;--card:#ffffff;--ink:#1c2230;--muted:#5d6878;--line:#e2ddd2;--grid:#ece8df;
+  --cost:#c2410c;--rev:#1d4ed8;--fix:#a16207;--var:#7c3aed;--accent:#0f766e;--ghost:#9097a1;
+  --gain:rgba(22,163,74,.15);--loss:rgba(220,38,38,.13);--pos:#15803d;--neg:#b91c1c;--onaccent:#ffffff;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13161b;--card:#1c2027;--ink:#e7e9ed;--muted:#9aa3af;--line:#2e343e;--grid:#262b33;
+  --cost:#fb923c;--rev:#60a5fa;--fix:#e0b15a;--var:#c4b5fd;--accent:#2dd4bf;--ghost:#767d88;
+  --gain:rgba(34,197,94,.17);--loss:rgba(248,113,113,.15);--pos:#4ade80;--neg:#f87171;--onaccent:#0b1514;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13161b;--card:#1c2027;--ink:#e7e9ed;--muted:#9aa3af;--line:#2e343e;--grid:#262b33;
+  --cost:#fb923c;--rev:#60a5fa;--fix:#e0b15a;--var:#c4b5fd;--accent:#2dd4bf;--ghost:#767d88;
+  --gain:rgba(34,197,94,.17);--loss:rgba(248,113,113,.15);--pos:#4ade80;--neg:#f87171;--onaccent:#0b1514;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:1180px;margin:0 auto;padding-block:16px 24px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{margin-bottom:14px}
+.kicker{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:1.55rem;margin:.15rem 0 .4rem;line-height:1.2;text-wrap:balance}
+.story{color:var(--muted);max-width:75ch;margin:0}
+.story b{color:var(--ink)}
+.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}.a-chart{order:-1}}
+@media (max-width:860px) and (min-height:640px){.a-chart{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 6px 14px rgba(0,0,0,.08)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card h2{font-size:.85rem;margin:0 0 10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.ctrl{padding:10px 0;border-top:1px solid var(--line)}
+.ctrl:first-of-type{border-top:0;padding-top:0}
+.ctrl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ctrl label{font-weight:650}
+.ctrl small{display:block;color:var(--muted);font-size:.8rem}
+.val{font-variant-numeric:tabular-nums;font-weight:750;white-space:nowrap}
+.row{display:flex;align-items:center;gap:8px;margin-top:6px}
+input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:30px}
+.step{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:1.15rem;cursor:pointer;flex:none;touch-action:manipulation}
+.step:active{background:var(--line)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn{border:1px solid var(--line);background:transparent;color:var(--ink);padding:8px 12px;border-radius:10px;font:inherit;font-size:.9rem;cursor:pointer;touch-action:manipulation}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.opt{display:flex;gap:8px;align-items:center;font-size:.9rem;margin-top:10px;color:var(--muted)}
+.opt input{width:18px;height:18px;accent-color:var(--accent)}
+.chartcard{padding:10px 8px 4px}
+svg{width:100%;height:auto;display:block}
+svg .g{stroke:var(--grid);stroke-width:1}
+svg .ax{stroke:var(--muted);stroke-width:1.2}
+svg .tk,svg .at{font-size:12px;fill:var(--muted)}
+svg .kline{stroke:var(--cost);stroke-width:3;fill:none;stroke-linecap:round}
+svg .eline{stroke:var(--rev);stroke-width:3;fill:none;stroke-linecap:round}
+svg .vline{stroke:var(--var);stroke-width:2.5;fill:none;stroke-linecap:round}
+svg .lblv{font-size:12px;font-weight:700;fill:var(--var)}
+svg .fline{stroke:var(--fix);stroke-width:2;stroke-dasharray:7 5}
+svg .ghost{stroke:var(--ghost);stroke-width:2;stroke-dasharray:4 5;fill:none}
+svg .ghostpt{fill:var(--card);stroke:var(--ghost);stroke-width:2}
+svg .zl{fill:var(--loss)} svg .zg{fill:var(--gain)}
+svg .guide{stroke:var(--ink);stroke-opacity:.45;stroke-dasharray:3 4}
+svg .bep{fill:var(--card);stroke:var(--ink);stroke-width:2.5}
+svg .lblk{font-size:13px;font-weight:750;fill:var(--cost)}
+svg .lble{font-size:13px;font-weight:750;fill:var(--rev)}
+svg .lblf{font-size:12px;font-weight:700;fill:var(--fix)}
+svg .lblb{font-size:13px;font-weight:750;fill:var(--ink)}
+svg .zt{font-size:12px;font-weight:750;opacity:.85}
+svg .ztl{fill:var(--neg);color:var(--neg)} svg .ztg{fill:var(--pos);color:var(--pos)}
+svg .capl{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:2 4}
+svg .lblc{font-size:12px;font-weight:700;fill:var(--muted)}
+svg .gapp{stroke:var(--pos);stroke-width:5;stroke-linecap:round}
+svg .gapn{stroke:var(--neg);stroke-width:5;stroke-linecap:round}
+svg .lblg{font-size:12px;font-weight:700}
+svg .note{font-size:13px;font-weight:650;fill:var(--neg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.84rem;color:var(--muted);padding:4px 10px 8px}
+.legend i{display:inline-block;width:20px;height:0;border-top:3px solid;vertical-align:middle;margin-right:6px}
+sub{font-size:.7em}
+</style>
+<style>html,body{margin:0}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">Wirtschaft und Recht · Q12 · AB 1.6</div>
+    <h1>Break-Even-Simulator</h1>
+    <p class="story">Mara verkauft in ihrem Onlineshop <b>„Maras Gruselgarderobe“</b> zur Halloweenzeit selbst genähte Vampirkostüme. Fixe Kosten fallen für ihre eigene Vergütung, die Werkstattmiete, die Werbung und das Leasing der Nähmaschinen an. Für jedes Kostüm kommen Stoffpaket, Verschlüsse, Garn, Accessoires und die Versandverpackung hinzu.<br>Wie viele Kostüme muss Mara monatlich verkaufen, damit ihre Kosten gedeckt sind?</p>
+  </header>
+
+  <div class="grid">
+    <section class="card a-ctrl" aria-label="Veränderung der Inputfaktoren">
+      <h2>Veränderung der Inputfaktoren</h2>
+
+      <div class="ctrl">
+        <div class="ctrl-head"><label for="p">Verkaufspreis p</label><span class="val" id="p-v"></span></div>
+        <small>pro Vampirkostüm</small>
+        <div class="row"><button class="step" data-k="p" data-d="-1" aria-label="Preis senken">−</button><input type="range" id="p" min="50" max="80" step="1"><button class="step" data-k="p" data-d="1" aria-label="Preis erhöhen">+</button></div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head"><label for="kv">Variable Kosten je Stück</label><span class="val" id="kv-v"></span></div>
+        <small>pro Kostüm (Stoffpaket, Verschlüsse, Garn, Accessoires, Versandverpackung)</small>
+        <div class="row"><button class="step" data-k="kv" data-d="-1" aria-label="variable Kosten senken">−</button><input type="range" id="kv" min="25" max="50" step="1"><button class="step" data-k="kv" data-d="1" aria-label="variable Kosten erhöhen">+</button></div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head"><label for="kf">Fixe Kosten K<sub>f</sub></label><span class="val" id="kf-v"></span></div>
+        <small>pro Monat (Vergütung, Miete, Werbung, Leasing)</small>
+        <div class="row"><button class="step" data-k="kf" data-d="-1" aria-label="Fixkosten senken">−</button><input type="range" id="kf" min="2500" max="3500" step="100"><button class="step" data-k="kf" data-d="1" aria-label="Fixkosten erhöhen">+</button></div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head"><label for="cap">Kapazitätsgrenze</label><span class="val" id="cap-v"></span></div>
+        <small>so viele Kostüme kann Mara höchstens pro Monat fertigstellen</small>
+        <div class="row"><button class="step" data-k="cap" data-d="-1" aria-label="Kapazität senken">−</button><input type="range" id="cap" min="150" max="250" step="10"><button class="step" data-k="cap" data-d="1" aria-label="Kapazität erhöhen">+</button></div>
+      </div>
+
+      <div class="btns">
+        <button class="btn primary" id="reset" type="button">Diagramm auf Ausgangswerte zurücksetzen</button>
+      </div>
+      <label class="opt"><input type="checkbox" id="auto"> Achsen automatisch anpassen</label>
+    </section>
+
+    <div class="card chartcard a-chart">
+      <svg id="chart" viewBox="0 0 640 400" role="img" aria-label="Diagramm mit Kosten- und Erlösgerade und der Gewinnschwelle"></svg>
+      <div class="legend">
+        <span><i style="border-color:var(--rev)"></i>Erlös E(x)</span>
+        <span><i style="border-color:var(--cost)"></i>Gesamtkosten K(x)</span>
+        <span><i style="border-color:var(--var)"></i>Variable Kosten K<sub>v</sub>(x)</span>
+        <span><i style="border-color:var(--fix);border-top-style:dashed"></i>Fixe Kosten K<sub>f</sub></span>
+        <span><i style="border-color:var(--muted);border-top-style:dotted"></i>Kapazitätsgrenze</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var BASE = {p:60, kv:35, kf:3000, cap:200};
+  var STEP = {p:1, kv:1, kf:100, cap:10};
+  var KEYS = ["p","kv","kf","cap"];
+  var S = clone(BASE), ghost = null;
+  function clone(o){ return {p:o.p, kv:o.kv, kf:o.kf, cap:o.cap}; }
+  function el(id){ return document.getElementById(id); }
+  function nf(v,d){ return v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+  function eur(v,d){ if(d===undefined) d=2; return nf(v,d).replace("-","−") + " €"; }
+  function intf(v){ return nf(Math.round(v),0); }
+  function db(s){ return s.p - s.kv; }
+  function bep(s){ var d = db(s); return d > 1e-9 ? s.kf / d : Infinity; }
+  function K(s,x){ return s.kf + s.kv * x; }
+  function E(s,x){ return s.p * x; }
+  function ceilQ(b){ return Math.ceil(b - 1e-7); }
+
+  function niceCeil(v){
+    if(v <= 0) return 1;
+    var e = Math.pow(10, Math.floor(Math.log10(v)));
+    var ms = [1,1.2,1.5,2,2.5,3,4,5,6,8,10];
+    for(var i=0;i<ms.length;i++){ if(ms[i]*e >= v - 1e-9) return ms[i]*e; }
+    return 10*e;
+  }
+  function niceStep(range){
+    var raw = range / 5;
+    var e = Math.pow(10, Math.floor(Math.log10(raw)));
+    var ms = [1,2,2.5,5,10];
+    for(var i=0;i<ms.length;i++){ if(ms[i]*e >= raw - 1e-9) return ms[i]*e; }
+    return 10*e;
+  }
+  function computeAxis(s,g,minX){
+    var b = bep(s);
+    var xm = Math.max(minX, s.cap * 1.12, isFinite(b) ? Math.min(b, s.cap) * 1.6 : 0);
+    if(g){ xm = Math.max(xm, g.cap * 1.12); }
+    xm = Math.min(niceCeil(xm), 30000);
+    var top = Math.max(K(s,s.cap), E(s,s.cap));
+    if(g) top = Math.max(top, K(g,g.cap), E(g,g.cap));
+    return {xm:xm, ym:niceCeil(top * 1.02)};
+  }
+  var FIXED = {xm:300, ym:20000};
+
+  var W=640, H=400, m={l:74,r:18,t:14,b:46}, pw, ph;
+  function setSize(){
+    var w = el("chart").clientWidth || 640;
+    if(w < 560){ W = 440; H = 360; m = {l:50,r:22,t:22,b:42}; }
+    else { W = 640; H = 400; m = {l:74,r:18,t:14,b:46}; }
+    pw = W - m.l - m.r; ph = H - m.t - m.b;
+    el("chart").setAttribute("viewBox","0 0 "+W+" "+H);
+  }
+
+  function draw(){
+    setSize();
+    var ax = el("auto").checked ? computeAxis(S, ghost, 100) : FIXED;
+    var xm = ax.xm, ym = ax.ym;
+    function sx(x){ return m.l + x / xm * pw; }
+    function sy(y){ return m.t + ph - y / ym * ph; }
+    function P(x,y){ return sx(x).toFixed(1) + "," + sy(y).toFixed(1); }
+    function line(cls,x1,y1,x2,y2){ return '<line class="'+cls+'" x1="'+sx(x1).toFixed(1)+'" y1="'+sy(y1).toFixed(1)+'" x2="'+sx(x2).toFixed(1)+'" y2="'+sy(y2).toFixed(1)+'"/>'; }
+
+    var o = '<defs><clipPath id="clip"><rect x="'+m.l+'" y="'+m.t+'" width="'+pw+'" height="'+ph+'"/></clipPath></defs>';
+    var xs = niceStep(xm), ys = niceStep(ym), i, v, X, Y;
+    for(i=0; (v=i*xs) <= xm + 1e-6; i++){
+      X = sx(v).toFixed(1);
+      o += '<line class="g" x1="'+X+'" y1="'+m.t+'" x2="'+X+'" y2="'+(m.t+ph)+'"/>';
+      o += '<text class="tk" x="'+X+'" y="'+(m.t+ph+18)+'" text-anchor="middle">'+intf(v)+'</text>';
+    }
+    for(i=0; (v=i*ys) <= ym + 1e-6; i++){
+      Y = sy(v).toFixed(1);
+      o += '<line class="g" x1="'+m.l+'" y1="'+Y+'" x2="'+(m.l+pw)+'" y2="'+Y+'"/>';
+      o += '<text class="tk" x="'+(m.l-8)+'" y="'+(+Y+4)+'" text-anchor="end">'+intf(v)+'</text>';
+    }
+    o += '<line class="ax" x1="'+m.l+'" y1="'+(m.t+ph)+'" x2="'+(m.l+pw)+'" y2="'+(m.t+ph)+'"/>';
+    o += '<line class="ax" x1="'+m.l+'" y1="'+m.t+'" x2="'+m.l+'" y2="'+(m.t+ph)+'"/>';
+    o += '<text class="at" x="'+(m.l+pw/2)+'" y="'+(H-6)+'" text-anchor="middle">'+"Menge"+'</text>';
+    if(W < 600) o += '<text class="at" x="'+(m.l-8)+'" y="12" text-anchor="end">€</text>';
+    else o += '<text class="at" x="13" y="'+(m.t+ph/2)+'" text-anchor="middle" transform="rotate(-90 13 '+(m.t+ph/2)+')">Euro</text>';
+
+    var b = bep(S), xc = Math.min(S.cap, xm);
+    var c = '<g clip-path="url(#clip)">';
+    if(isFinite(b) && b < xc){
+      if(b > 0) c += '<polygon class="zl" points="'+P(0,0)+' '+P(b,E(S,b))+' '+P(0,S.kf)+'"/>';
+      c += '<polygon class="zg" points="'+P(b,E(S,b))+' '+P(xc,E(S,xc))+' '+P(xc,K(S,xc))+'"/>';
+    } else {
+      c += '<polygon class="zl" points="'+P(0,0)+' '+P(xc,E(S,xc))+' '+P(xc,K(S,xc))+' '+P(0,S.kf)+'"/>';
+    }
+    if(ghost){
+      var gc = Math.min(ghost.cap, xm);
+      c += line("ghost",0,ghost.kf,gc,K(ghost,gc));
+      c += line("ghost",0,0,gc,E(ghost,gc));
+    }
+    c += line("capl",xc,0,xc,ym);
+    c += line("vline",0,0,xc,S.kv*xc);
+    c += line("fline",0,S.kf,xc,S.kf);
+    c += line("kline",0,S.kf,xc,K(S,xc));
+    c += line("eline",0,0,xc,E(S,xc));
+    var gcap = db(S)*xc - S.kf;
+    if(Math.abs(gcap) > 1e-9) c += line(gcap > 0 ? "gapp" : "gapn", xc, E(S,xc), xc, K(S,xc));
+    if(ghost){
+      var gb = bep(ghost);
+      if(isFinite(gb)) c += '<circle class="ghostpt" cx="'+sx(gb).toFixed(1)+'" cy="'+sy(E(ghost,gb)).toFixed(1)+'" r="5"/>';
+    }
+    var bepVisible = isFinite(b) && b <= xc && E(S,b) <= ym;
+    if(bepVisible){
+      var Eb = E(S,b);
+      c += line("guide",b,0,b,Eb);
+      c += line("guide",0,Eb,b,Eb);
+      c += '<circle class="bep" cx="'+sx(b).toFixed(1)+'" cy="'+sy(Eb).toFixed(1)+'" r="6.5"/>';
+    }
+    var zt = "";
+    function ix(px){ return (px - m.l) / pw * xm; }
+    function zoneLabel(cls, text, xa, xb, up, lo, cx0, cy0){
+      if(sx(xb) - sx(xa) < 3) return;
+      var tw = 80, best = null;
+      for(var t = 0.1; t <= 0.9001; t += 0.05){
+        var xv = xa + (xb - xa) * t, px = sx(xv);
+        if(px - tw/2 < sx(xa) + 2 || px + tw/2 > sx(xb) - 2) continue;
+        var yc = (sy(up(xv)) + sy(lo(xv))) / 2;
+        if(yc < m.t + 10) continue;
+        var marg = Infinity;
+        [ix(px - tw/2), xv, ix(px + tw/2)].forEach(function(x){
+          marg = Math.min(marg, (yc - 8) - sy(up(x)), sy(lo(x)) - (yc + 8));
+        });
+        if(marg >= 1 && (!best || marg > best.marg)) best = {px:px, yc:yc, marg:marg};
+      }
+      if(best){
+        zt += '<text class="zt '+cls+'" x="'+best.px.toFixed(1)+'" y="'+(best.yc+4).toFixed(1)+'" text-anchor="middle">'+text+'</text>';
+        return;
+      }
+      var ax = sx(cx0), ay = sy(cy0), lx, ly, found = false;
+      var yU = sy(up(cx0)), yL = sy(lo(cx0));
+      var dys = [-26, -44, -62, -80, 30, 48, 66], dxs = [0, -50, 50, -100, -150];
+      for(var di = 0; di < dxs.length && !found; di++){
+        for(var dj = 0; dj < dys.length && !found; dj++){
+          var cxp = Math.max(m.l + tw/2 + 4, Math.min(m.l + pw - tw/2 - 4, ax + dxs[di]));
+          var cyp = dys[dj] < 0 ? Math.min(yU, ay) + dys[dj] : Math.max(yL, ay) + dys[dj];
+          if(cyp < m.t + 14 || cyp > m.t + ph - 6) continue;
+          var rr = [cxp - tw/2 - 3, cyp - 12, cxp + tw/2 + 3, cyp + 4];
+          if(!hits(rr)){ lx = cxp; ly = cyp; found = true; }
+        }
+      }
+      if(!found){ lx = Math.max(m.l + tw/2 + 4, Math.min(m.l + pw - tw/2 - 4, ax)); ly = Math.max(m.t + 14, Math.min(yU, ay) - 26); }
+      occ.push([lx - tw/2, ly - 12, lx + tw/2, ly + 4]);
+      var ly2 = ly < ay ? ly + 4 : ly - 12;
+      zt += '<line x1="'+lx.toFixed(1)+'" y1="'+ly2.toFixed(1)+'" x2="'+ax.toFixed(1)+'" y2="'+ay.toFixed(1)+'" class="'+cls+'" style="stroke:currentColor;stroke-width:1.2"/>';
+      zt += '<circle cx="'+ax.toFixed(1)+'" cy="'+ay.toFixed(1)+'" r="2.5" class="'+cls+'"/>';
+      zt += '<text class="zt '+cls+'" x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle">'+text+'</text>';
+    }
+    function runZones(){
+    if(isFinite(b)){
+      var bl = Math.max(0, Math.min(b, xc));
+      if(bl > 0) zoneLabel("ztl", "Verlustzone", 0, bl, function(x){return K(S,x);}, function(x){return E(S,x);}, bl/3, (K(S,bl/3) + E(S,bl/3)) / 2);
+      if(b < xc) zoneLabel("ztg", "Gewinnzone", b, xc, function(x){return E(S,x);}, function(x){return K(S,x);}, (b + 2*xc)/3, (E(S,(b + 2*xc)/3) + K(S,(b + 2*xc)/3)) / 2);
+    } else {
+      zoneLabel("ztl", "Verlustzone", 0, xc, function(x){return K(S,x);}, function(x){return E(S,x);}, xc/3, (K(S,xc/3) + E(S,xc/3)) / 2);
+    }
+    }
+    var occ = [];
+    function hits(r){ return occ.some(function(q){ return r[0] < q[2] && r[2] > q[0] && r[1] < q[3] && r[3] > q[1]; }); }
+    c += '</g>';
+    o += c;
+
+    var labels = [];
+    var xeE = S.p > 0 ? Math.min(xc, ym / S.p) : xc;
+    labels.push({cls:"lble", t:"E(x)", x:sx(xeE)-6, y:sy(E(S,xeE))-8});
+    if(S.kf <= ym){
+      var xeK = S.kv > 0 ? Math.min(xc, (ym - S.kf) / S.kv) : xc;
+      labels.push({cls:"lblk", t:"K(x)", x:sx(xeK)-6, y:sy(K(S,xeK))-8});
+      var yf = sy(S.kf) + 16;
+      if(yf > m.t + ph - 4) yf = sy(S.kf) - 6;
+      labels.push({cls:"lblf", t:"K<tspan dy=\"3\" font-size=\"9\">f</tspan>", x:sx(xc)-6, y:yf});
+    }
+    var xeV = S.kv > 0 ? Math.min(xc, ym / S.kv) : xc;
+    labels.push({cls:"lblv", t:"K<tspan dy=\"3\" font-size=\"9\">v</tspan><tspan dy=\"-3\">(x)</tspan>", x:sx(xeV)-6, y:sy(S.kv*xeV)-8});
+    labels.sort(function(a,b){ return a.y - b.y; });
+    for(var li=1; li<labels.length; li++){
+      for(var lj=0; lj<li; lj++){
+        if(Math.abs(labels[li].x - labels[lj].x) < 50 && labels[li].y - labels[lj].y < 16) labels[li].y = labels[lj].y + 16;
+      }
+    }
+    labels.forEach(function(L){
+      L.y = Math.max(m.t + 12, Math.min(m.t + ph - 4, L.y));
+      o += '<text class="'+L.cls+'" x="'+L.x.toFixed(1)+'" y="'+L.y.toFixed(1)+'" text-anchor="end">'+L.t+'</text>';
+      occ.push([L.x - 36, L.y - 13, L.x + 2, L.y + 4]);
+    });
+    var cx = sx(xc), cRight = cx < m.l + pw - 110;
+    o += '<text class="lblc" x="'+(cRight ? cx+6 : cx-6).toFixed(1)+'" y="'+(m.t+14)+'" text-anchor="'+(cRight?"start":"end")+'">Kapazitätsgrenze</text>';
+    occ.push(cRight ? [cx + 2, m.t, cx + 110, m.t + 18] : [cx - 110, m.t, cx - 2, m.t + 18]);
+    occ.push([cx - 5, Math.min(sy(E(S,xc)), sy(K(S,xc))) - 2, cx + 5, Math.max(sy(E(S,xc)), sy(K(S,xc))) + 2]);
+    if(Math.abs(gcap) > 1e-9){
+      var gy = (sy(E(S,xc)) + sy(K(S,xc))) / 2;
+      gy = Math.max(m.t + 30, Math.min(m.t + ph - 22, gy));
+      var gRight = cx < m.l + pw - 92, gx = gRight ? cx + 8 : cx - 8, ga = gRight ? "start" : "end";
+      var gst = 'style="fill:var('+(gcap>0?"--pos":"--neg")+')" x="'+gx.toFixed(1)+'" text-anchor="'+ga+'"';
+      o += '<text class="lblg" '+gst+' y="'+(gy-3).toFixed(1)+'">'+(gcap>0?"max. Gewinn":"min. Verlust")+'</text>';
+      o += '<text class="lblg" '+gst+' y="'+(gy+13).toFixed(1)+'">'+eur(gcap,2)+'</text>';
+      occ.push(gRight ? [gx - 2, gy - 16, gx + 92, gy + 17] : [gx - 92, gy - 16, gx + 2, gy + 17]);
+    }
+    if(bepVisible){
+      var bx = sx(b), by = sy(E(S,b)), left = bx - m.l > 140;
+      var tx = left ? bx - 12 : Math.max(m.l + 72, bx), an = left ? "end" : "middle";
+      var ty = Math.max(m.t + 30, by - (left ? 26 : 50));
+      if(left){
+        occ.forEach(function(q){
+          if(q[1] < ty + 20 && q[3] > ty - 13 && q[2] > tx - 150 && q[0] < tx) tx = Math.min(tx, q[0] - 4);
+        });
+      }
+      var bw = 150, br = an === "end" ? [tx - bw, ty - 13, tx, ty + 20] : [tx - bw/2, ty - 13, tx + bw/2, ty + 20];
+      occ.push(br); occ.push([bx - 9, by - 9, bx + 9, by + 9]);
+      o += '<text class="lblb" x="'+tx.toFixed(1)+'" y="'+ty.toFixed(1)+'" text-anchor="'+an+'">Break-Even-Point</text>';
+      o += '<text class="lblb" style="font-weight:600" x="'+tx.toFixed(1)+'" y="'+(ty+16).toFixed(1)+'" text-anchor="'+an+'">x* = '+nf(b,2)+' Kostüme</text>';
+    } else {
+      var msg = isFinite(b)
+        ? (b > S.cap ? "Break-Even-Point (x* = "+nf(b,2)+") liegt jenseits der Kapazitätsgrenze." : "Break-Even-Point liegt außerhalb des Diagramms → „Achsen automatisch anpassen“")
+        : "Kein Break-Even-Point: Der Preis deckt die variablen Kosten je Stück nicht.";
+      o += '<text class="note" x="'+(m.l+pw/2)+'" y="'+(m.t+34)+'" text-anchor="middle">'+msg+'</text>';
+      occ.push([m.l, m.t + 20, m.l + pw, m.t + 40]);
+    }
+    runZones();
+    o += zt;
+    el("chart").innerHTML = o;
+  }
+
+  function fmtVal(k,v){ return k === "cap" ? intf(v) + " Stück" : k === "kf" ? eur(v,0) : eur(v,2); }
+  function update(){
+    KEYS.forEach(function(k){ el(k+"-v").textContent = fmtVal(k, S[k]); });
+    draw();
+  }
+  function syncInputs(){ KEYS.forEach(function(k){ el(k).value = S[k]; }); }
+
+  KEYS.forEach(function(k){
+    el(k).addEventListener("input", function(){ S[k] = parseFloat(this.value); update(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".step"), function(btn){
+    btn.addEventListener("click", function(){
+      var k = btn.getAttribute("data-k"), d = +btn.getAttribute("data-d"), inp = el(k);
+      var v = Math.round((S[k] + d * STEP[k]) / STEP[k]) * STEP[k];
+      v = Math.min(+inp.max, Math.max(+inp.min, +v.toFixed(2)));
+      S[k] = v; inp.value = v; update();
+    });
+  });
+  el("reset").addEventListener("click", function(){ S = clone(BASE); syncInputs(); update(); });
+  el("auto").addEventListener("change", update);
+
+  var rt; window.addEventListener("resize", function(){ clearTimeout(rt); rt = setTimeout(draw, 120); });
+  syncInputs();
+  update();
+})();
+</script>
+</body>
+</html>
