@@ -1,41 +1,4 @@
-<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Break-Even-Simulator</title>
-<style>
-/* Layout: Stellschrauben links, Diagramm rechts; auf dem Handy Diagramm oben (sticky) */
-:root{
-  --bg:#f5f3ee;--card:#ffffff;--ink:#1c2230;--muted:#5d6878;--line:#e2ddd2;--grid:#ece8df;
-  --cost:#c2410c;--rev:#1d4ed8;--fix:#a16207;--var:#7c3aed;--accent:#0f766e;--ghost:#9097a1;
-  --gain:rgba(22,163,74,.15);--loss:rgba(220,38,38,.13);--pos:#15803d;--neg:#b91c1c;--onaccent:#ffffff;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#13161b;--card:#1c2027;--ink:#e7e9ed;--muted:#9aa3af;--line:#2e343e;--grid:#262b33;
-  --cost:#fb923c;--rev:#60a5fa;--fix:#e0b15a;--var:#c4b5fd;--accent:#2dd4bf;--ghost:#767d88;
-  --gain:rgba(34,197,94,.17);--loss:rgba(248,113,113,.15);--pos:#4ade80;--neg:#f87171;--onaccent:#0b1514;color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#13161b;--card:#1c2027;--ink:#e7e9ed;--muted:#9aa3af;--line:#2e343e;--grid:#262b33;
-  --cost:#fb923c;--rev:#60a5fa;--fix:#e0b15a;--var:#c4b5fd;--accent:#2dd4bf;--ghost:#767d88;
-  --gain:rgba(34,197,94,.17);--loss:rgba(248,113,113,.15);--pos:#4ade80;--neg:#f87171;--onaccent:#0b1514;color-scheme:dark}
-*{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
-.wrap{max-width:1180px;margin:0 auto;padding-block:16px 24px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header{margin-bottom:14px}
-.kicker{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
-h1{font-size:1.55rem;margin:.15rem 0 .4rem;line-height:1.2;text-wrap:balance}
-.story{color:var(--muted);max-width:75ch;margin:0}
-.story b{color:var(--ink)}
-.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:16px;align-items:start}
-@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}.a-chart{order:-1}}
-@media (max-width:860px) and (min-height:640px){.a-chart{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:0 6px 14px rgba(0,0,0,.08)}}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
-.card h2{font-size:.85rem;margin:0 0 10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-.ctrl{padding:10px 0;border-top:1px solid var(--line)}
-.ctrl:first-of-type{border-top:0;padding-top:0}
-.ctrl-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+align-items:baseline;gap:8px}
 .ctrl label{font-weight:650}
 .ctrl small{display:block;color:var(--muted);font-size:.8rem}
 .val{font-variant-numeric:tabular-nums;font-weight:750;white-space:nowrap}
@@ -43,7 +6,7 @@ h1{font-size:1.55rem;margin:.15rem 0 .4rem;line-height:1.2;text-wrap:balance}
 input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:30px}
 .step{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:1.15rem;cursor:pointer;flex:none;touch-action:manipulation}
 .step:active{background:var(--line)}
-.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
 .btn{border:1px solid var(--line);background:transparent;color:var(--ink);padding:8px 12px;border-radius:10px;font:inherit;font-size:.9rem;cursor:pointer;touch-action:manipulation}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -67,6 +30,10 @@ svg .bep{fill:var(--card);stroke:var(--ink);stroke-width:2.5}
 svg .lblk{font-size:13px;font-weight:750;fill:var(--cost)}
 svg .lble{font-size:13px;font-weight:750;fill:var(--rev)}
 svg .lblf{font-size:12px;font-weight:700;fill:var(--fix)}
+svg .tkb{font-size:12px;font-weight:750;fill:var(--ink)}
+svg .tkm{stroke:var(--ink);stroke-width:2}
+svg .arr{stroke:var(--ink);stroke-width:1.6;fill:none}
+svg .arrh{fill:var(--ink)}
 svg .lblb{font-size:13px;font-weight:750;fill:var(--ink)}
 svg .zt{font-size:12px;font-weight:750;opacity:.85}
 svg .ztl{fill:var(--neg);color:var(--neg)} svg .ztg{fill:var(--pos);color:var(--pos)}
@@ -93,6 +60,9 @@ sub{font-size:.7em}
 
   <div class="grid">
     <section class="card a-ctrl" aria-label="Veränderung der Inputfaktoren">
+      <div class="btns">
+        <button class="btn primary" id="reset" type="button">Diagramm auf Ausgangswerte zurücksetzen</button>
+      </div>
       <h2>Veränderung der Inputfaktoren</h2>
 
       <div class="ctrl">
@@ -119,9 +89,6 @@ sub{font-size:.7em}
         <div class="row"><button class="step" data-k="cap" data-d="-1" aria-label="Kapazität senken">−</button><input type="range" id="cap" min="150" max="250" step="10"><button class="step" data-k="cap" data-d="1" aria-label="Kapazität erhöhen">+</button></div>
       </div>
 
-      <div class="btns">
-        <button class="btn primary" id="reset" type="button">Diagramm auf Ausgangswerte zurücksetzen</button>
-      </div>
       <label class="opt"><input type="checkbox" id="auto"> Achsen automatisch anpassen</label>
     </section>
 
@@ -199,12 +166,14 @@ sub{font-size:.7em}
     function P(x,y){ return sx(x).toFixed(1) + "," + sy(y).toFixed(1); }
     function line(cls,x1,y1,x2,y2){ return '<line class="'+cls+'" x1="'+sx(x1).toFixed(1)+'" y1="'+sy(y1).toFixed(1)+'" x2="'+sx(x2).toFixed(1)+'" y2="'+sy(y2).toFixed(1)+'"/>'; }
 
-    var o = '<defs><clipPath id="clip"><rect x="'+m.l+'" y="'+m.t+'" width="'+pw+'" height="'+ph+'"/></clipPath></defs>';
+    var o = '<defs><marker id="arrh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path class="arrh" d="M0,1 L10,5 L0,9 z"/></marker><clipPath id="clip"><rect x="'+m.l+'" y="'+m.t+'" width="'+pw+'" height="'+ph+'"/></clipPath></defs>';
+    var b = bep(S), xc = Math.min(S.cap, xm);
+    var bepVisible = isFinite(b) && b <= xc && E(S,b) <= ym;
     var xs = niceStep(xm), ys = niceStep(ym), i, v, X, Y;
     for(i=0; (v=i*xs) <= xm + 1e-6; i++){
       X = sx(v).toFixed(1);
       o += '<line class="g" x1="'+X+'" y1="'+m.t+'" x2="'+X+'" y2="'+(m.t+ph)+'"/>';
-      o += '<text class="tk" x="'+X+'" y="'+(m.t+ph+18)+'" text-anchor="middle">'+intf(v)+'</text>';
+      if(!(bepVisible && Math.abs(sx(v) - sx(b)) < 44)) o += '<text class="tk" x="'+X+'" y="'+(m.t+ph+18)+'" text-anchor="middle">'+intf(v)+'</text>';
     }
     for(i=0; (v=i*ys) <= ym + 1e-6; i++){
       Y = sy(v).toFixed(1);
@@ -217,7 +186,6 @@ sub{font-size:.7em}
     if(W < 600) o += '<text class="at" x="'+(m.l-8)+'" y="12" text-anchor="end">€</text>';
     else o += '<text class="at" x="13" y="'+(m.t+ph/2)+'" text-anchor="middle" transform="rotate(-90 13 '+(m.t+ph/2)+')">Euro</text>';
 
-    var b = bep(S), xc = Math.min(S.cap, xm);
     var c = '<g clip-path="url(#clip)">';
     if(isFinite(b) && b < xc){
       if(b > 0) c += '<polygon class="zl" points="'+P(0,0)+' '+P(b,E(S,b))+' '+P(0,S.kf)+'"/>';
@@ -241,12 +209,10 @@ sub{font-size:.7em}
       var gb = bep(ghost);
       if(isFinite(gb)) c += '<circle class="ghostpt" cx="'+sx(gb).toFixed(1)+'" cy="'+sy(E(ghost,gb)).toFixed(1)+'" r="5"/>';
     }
-    var bepVisible = isFinite(b) && b <= xc && E(S,b) <= ym;
     if(bepVisible){
       var Eb = E(S,b);
       c += line("guide",b,0,b,Eb);
       c += line("guide",0,Eb,b,Eb);
-      c += '<circle class="bep" cx="'+sx(b).toFixed(1)+'" cy="'+sy(Eb).toFixed(1)+'" r="6.5"/>';
     }
     var zt = "";
     function ix(px){ return (px - m.l) / pw * xm; }
@@ -339,23 +305,33 @@ sub{font-size:.7em}
     }
     if(bepVisible){
       var bx = sx(b), by = sy(E(S,b)), left = bx - m.l > 140;
-      var tx = left ? bx - 12 : Math.max(m.l + 72, bx), an = left ? "end" : "middle";
-      var ty = Math.max(m.t + 30, by - (left ? 26 : 50));
+      var tx = left ? bx - 34 : Math.max(m.l + 80, bx), an = left ? "end" : "middle";
+      var ty = Math.max(m.t + 30, by - (left ? 42 : 56));
       if(left){
         occ.forEach(function(q){
-          if(q[1] < ty + 20 && q[3] > ty - 13 && q[2] > tx - 150 && q[0] < tx) tx = Math.min(tx, q[0] - 4);
+          if(q[1] < ty + 4 && q[3] > ty - 13 && q[2] > tx - 130 && q[0] < tx) tx = Math.min(tx, q[0] - 4);
         });
       }
-      var bw = 150, br = an === "end" ? [tx - bw, ty - 13, tx, ty + 20] : [tx - bw/2, ty - 13, tx + bw/2, ty + 20];
+      var bw = 124, br = an === "end" ? [tx - bw, ty - 13, tx, ty + 4] : [tx - bw/2, ty - 13, tx + bw/2, ty + 4];
       occ.push(br); occ.push([bx - 9, by - 9, bx + 9, by + 9]);
       o += '<text class="lblb" x="'+tx.toFixed(1)+'" y="'+ty.toFixed(1)+'" text-anchor="'+an+'">Break-Even-Point</text>';
-      o += '<text class="lblb" style="font-weight:600" x="'+tx.toFixed(1)+'" y="'+(ty+16).toFixed(1)+'" text-anchor="'+an+'">x* = '+nf(b,2)+' Kostüme</text>';
+      var ax0 = an === "end" ? tx + 4 : tx, ay0 = an === "end" ? ty - 2 : ty + 6;
+      var dxA = bx - ax0, dyA = by - ay0, dA = Math.sqrt(dxA*dxA + dyA*dyA) || 1;
+      var ax1 = bx - dxA / dA * 4, ay1 = by - dyA / dA * 4;
+      o += '<line class="arr" x1="'+ax0.toFixed(1)+'" y1="'+ay0.toFixed(1)+'" x2="'+ax1.toFixed(1)+'" y2="'+ay1.toFixed(1)+'" marker-end="url(#arrh)"/>';
     } else {
       var msg = isFinite(b)
         ? (b > S.cap ? "Break-Even-Point (x* = "+nf(b,2)+") liegt jenseits der Kapazitätsgrenze." : "Break-Even-Point liegt außerhalb des Diagramms → „Achsen automatisch anpassen“")
         : "Kein Break-Even-Point: Der Preis deckt die variablen Kosten je Stück nicht.";
       o += '<text class="note" x="'+(m.l+pw/2)+'" y="'+(m.t+34)+'" text-anchor="middle">'+msg+'</text>';
       occ.push([m.l, m.t + 20, m.l + pw, m.t + 40]);
+    }
+    if(bepVisible){
+      var bxA = sx(b), yA = m.t + ph;
+      var bInt = Math.abs(b - Math.round(b)) < 1e-9;
+      var bTxt = (bInt ? "= " + intf(b) : "≈ " + nf(b,2));
+      o += '<line class="tkm" x1="'+bxA.toFixed(1)+'" y1="'+(yA-5)+'" x2="'+bxA.toFixed(1)+'" y2="'+(yA+5)+'"/>';
+      o += '<text class="tkb" x="'+bxA.toFixed(1)+'" y="'+(yA+18)+'" text-anchor="middle">x* '+bTxt+'</text>';
     }
     runZones();
     o += zt;
@@ -390,3 +366,4 @@ sub{font-size:.7em}
 </script>
 </body>
 </html>
+
