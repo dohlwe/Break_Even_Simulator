@@ -23,7 +23,10 @@
 body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
 .wrap{max-width:1180px;margin:0 auto;padding-block:16px 24px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header{margin-bottom:14px}
+header{margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px 24px}
+.head-text{min-width:0}
+.head-btn{flex:none}
+@media (max-width:860px){header{flex-direction:column;align-items:stretch}.head-btn{align-self:flex-start}}
 .kicker{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
 h1{font-size:1.55rem;margin:.15rem 0 .4rem;line-height:1.2;text-wrap:balance}
 .story{color:var(--muted);max-width:75ch;margin:0}
@@ -90,16 +93,16 @@ sub{font-size:.7em}
 
 <div class="wrap">
   <header>
-    <div class="kicker">Wirtschaft und Recht · Q12 · LB I: BWL · Break-Even-Analyse</div>
+    <div class="head-text">
+    <div class="kicker">Wirtschaft und Recht · Q12 · Lernbereich I: BWL · Break-Even-Analyse</div>
     <h1>Break-Even-Simulator</h1>
     <p class="story">Mara verkauft in ihrem Onlineshop <b>„Maras Gruselgarderobe“</b> zur Halloweenzeit selbst genähte Vampirkostüme. Fixe Kosten fallen für ihre eigene Vergütung, die Werkstattmiete, die Werbung und das Leasing der Nähmaschinen an. Für jedes Kostüm kommen Stoffpaket, Verschlüsse, Garn, Accessoires und die Versandverpackung hinzu.<br>Wie viele Kostüme muss Mara monatlich verkaufen, damit ihre Kosten gedeckt sind?</p>
+    </div>
+    <button class="btn primary head-btn" id="reset" type="button">Diagramm auf Ausgangswerte zurücksetzen</button>
   </header>
 
   <div class="grid">
     <section class="card a-ctrl" aria-label="Veränderung der Inputfaktoren">
-      <div class="btns">
-        <button class="btn primary" id="reset" type="button">Diagramm auf Ausgangswerte zurücksetzen</button>
-      </div>
       <h2>Veränderung der Inputfaktoren</h2>
 
       <div class="ctrl">
