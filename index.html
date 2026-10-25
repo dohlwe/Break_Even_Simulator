@@ -50,8 +50,6 @@ input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:30px}
 .btn{border:1px solid var(--line);background:transparent;color:var(--ink);padding:8px 12px;border-radius:10px;font:inherit;font-size:.9rem;cursor:pointer;touch-action:manipulation}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.opt{display:flex;gap:8px;align-items:center;font-size:.9rem;margin-top:10px;color:var(--muted)}
-.opt input{width:18px;height:18px;accent-color:var(--accent)}
 .chartcard{padding:10px 8px 4px}
 svg{width:100%;height:auto;display:block}
 svg .g{stroke:var(--grid);stroke-width:1}
@@ -129,7 +127,6 @@ sub{font-size:.7em}
         <div class="row"><button class="step" data-k="cap" data-d="-1" aria-label="Kapazität senken">−</button><input type="range" id="cap" min="150" max="250" step="10"><button class="step" data-k="cap" data-d="1" aria-label="Kapazität erhöhen">+</button></div>
       </div>
 
-      <label class="opt"><input type="checkbox" id="auto"> Achsen automatisch anpassen</label>
     </section>
 
     <div class="card chartcard a-chart">
@@ -177,15 +174,6 @@ sub{font-size:.7em}
     for(var i=0;i<ms.length;i++){ if(ms[i]*e >= raw - 1e-9) return ms[i]*e; }
     return 10*e;
   }
-  function computeAxis(s,g,minX){
-    var b = bep(s);
-    var xm = Math.max(minX, s.cap * 1.12, isFinite(b) ? Math.min(b, s.cap) * 1.6 : 0);
-    if(g){ xm = Math.max(xm, g.cap * 1.12); }
-    xm = Math.min(niceCeil(xm), 30000);
-    var top = Math.max(K(s,s.cap), E(s,s.cap));
-    if(g) top = Math.max(top, K(g,g.cap), E(g,g.cap));
-    return {xm:xm, ym:niceCeil(top * 1.02)};
-  }
   var FIXED = {xm:300, ym:20000};
 
   var W=640, H=400, m={l:74,r:18,t:14,b:46}, pw, ph;
@@ -199,7 +187,7 @@ sub{font-size:.7em}
 
   function draw(){
     setSize();
-    var ax = el("auto").checked ? computeAxis(S, ghost, 100) : FIXED;
+    var ax = FIXED;
     var xm = ax.xm, ym = ax.ym;
     function sx(x){ return m.l + x / xm * pw; }
     function sy(y){ return m.t + ph - y / ym * ph; }
@@ -361,7 +349,7 @@ sub{font-size:.7em}
       o += '<line class="arr" x1="'+ax0.toFixed(1)+'" y1="'+ay0.toFixed(1)+'" x2="'+ax1.toFixed(1)+'" y2="'+ay1.toFixed(1)+'" marker-end="url(#arrh)"/>';
     } else {
       var msg = isFinite(b)
-        ? (b > S.cap ? "Break-Even-Point (x* = "+nf(b,2)+") liegt jenseits der Kapazitätsgrenze." : "Break-Even-Point liegt außerhalb des Diagramms → „Achsen automatisch anpassen“")
+        ? (b > S.cap ? "Break-Even-Point (x* = "+nf(b,2)+") liegt jenseits der Kapazitätsgrenze." : "Break-Even-Point liegt außerhalb des Diagramms.")
         : "Kein Break-Even-Point: Der Preis deckt die variablen Kosten je Stück nicht.";
       o += '<text class="note" x="'+(m.l+pw/2)+'" y="'+(m.t+34)+'" text-anchor="middle">'+msg+'</text>';
       occ.push([m.l, m.t + 20, m.l + pw, m.t + 40]);
@@ -397,12 +385,14 @@ sub{font-size:.7em}
     });
   });
   el("reset").addEventListener("click", function(){ S = clone(BASE); syncInputs(); update(); });
-  el("auto").addEventListener("change", update);
 
   var rt; window.addEventListener("resize", function(){ clearTimeout(rt); rt = setTimeout(draw, 120); });
   syncInputs();
   update();
 })();
 </script>
+</body>
+</html>
+
 </body>
 </html>
